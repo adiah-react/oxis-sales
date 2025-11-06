@@ -218,7 +218,7 @@ const App = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const tax = subtotal * 0.08;
+  const tax = subtotal * 0.0;
   const total = subtotal + tax;
   const handleCheckout = async () => {
     try {
@@ -357,7 +357,7 @@ const App = () => {
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-700">
-              <span>Tax (8%):</span>
+              <span>Tax (0%):</span>
               <span>${tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t">
@@ -588,7 +588,7 @@ const App = () => {
                 <span className="font-semibold">${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
-                <span>Tax (8%):</span>
+                <span>Tax (0%):</span>
                 <span className="font-semibold">${tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-2xl font-bold text-gray-900 pt-2 border-t-2 border-gray-300">
