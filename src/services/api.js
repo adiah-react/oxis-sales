@@ -1,5 +1,6 @@
 import {
   addDoc,
+  deleteDoc,
   collection,
   doc,
   getDocs,
@@ -9,7 +10,7 @@ import {
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "./firebase";
 
 // Product APIs
 export const fetchProducts = async () => {
@@ -29,6 +30,46 @@ export const fetchProducts = async () => {
   } catch (error) {
     console.error("Error fetching products:", error);
     throw new Error("Failed to fetch products from Firestore");
+  }
+};
+
+export const createProduct = async (product) => {
+  try {
+    const productsRef = collection(db, "products");
+    const docRef = await addDoc(productsRef, product);
+    return {
+      id: docRef.id,
+      ...product,
+    };
+  } catch (error) {
+    console.error("Error creating product:", error);
+    throw new Error("Failed to create a product");
+  }
+};
+
+export const updateProduct = async (productId, updates) => {
+  try {
+    const productRef = doc(db, "products", productId.toString());
+    await updateDoc(productRef, updates);
+    const products = await fetchProducts();
+    const updatedProduct = products.find((p) => p.id === productId);
+    if (!updatedProduct) {
+      throw new Error("Product not found after update");
+    }
+    return updatedProduct;
+  } catch (error) {
+    console.error("Error updating product:", error);
+    throw new Error("Failed to update product");
+  }
+};
+
+export const deleteProduct = async (productId) => {
+  try {
+    const productRef = doc(db, "products", productId.toString());
+    await deleteDoc(productRef);
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    throw new Error("Failed to delete product");
   }
 };
 
@@ -117,6 +158,9 @@ export const createSale = async (saleData) => {
 
 export const apiService = {
   fetchProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
   updateProductStock,
   restockProduct,
   fetchSalesHistory,

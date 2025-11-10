@@ -5,11 +5,14 @@ import {
   PackageIcon,
   PlusIcon,
   RefreshCwIcon,
+  ShieldIcon,
   ShoppingCartIcon,
   TrashIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import Dashboard from "./components/Dashboard";
+import { useAuth } from "./contexts/AuthContext";
 import apiService from "./services/api";
 const initialProducts = [
   {
@@ -110,6 +113,8 @@ const initialProducts = [
   },
 ];
 const App = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -440,6 +445,13 @@ const App = () => {
                 >
                   <LayoutDashboardIcon className="w-5 h-5" />
                   Dashboard
+                </button>
+                <button
+                  onClick={() => navigate("/admin")}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                >
+                  <ShieldIcon className="w-5 h-5" />
+                  Admin
                 </button>
               </div>
             </div>
