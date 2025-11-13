@@ -17,7 +17,7 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/admin");
+      navigate("/");
     } catch (err) {
       setError("Failed to sign in. Please check your credentials.");
       console.error(err);

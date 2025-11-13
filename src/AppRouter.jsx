@@ -9,8 +9,15 @@ const AppRouter = () => {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/admin/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <App />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<Login />} />
           <Route
             path="/admin"
             element={
