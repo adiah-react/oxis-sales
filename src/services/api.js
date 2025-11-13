@@ -1,7 +1,7 @@
 import {
   addDoc,
-  deleteDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   increment,
@@ -107,6 +107,83 @@ export const restockProduct = async (productId, amount) => {
   }
 };
 
+// Person APIs
+export const fetchPersons = async () => {
+  try {
+    const personsRef = collection(db, "persons");
+    const snapshot = await getDocs(personsRef);
+    const persons = [];
+    snapshot.forEach((doc) => {
+      persons.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+    return persons;
+  } catch (error) {
+    console.error("Error fetching persons:", error);
+    throw new Error("Failed to fetch persons from Firestore");
+  }
+};
+
+export const createPerson = async (person) => {
+  try {
+    const personsRef = collection(db, "persons");
+    const docRef = await addDoc(personsRef, person);
+    return {
+      id: docRef.id,
+      ...person,
+    };
+  } catch (error) {
+    console.error("Error creating person:", error);
+    throw new Error("Failed to create person");
+  }
+};
+
+export const updatePerson = async (personId, updates) => {
+  try {
+    const personRef = doc(db, "persons", personId.toString());
+    await updateDoc(personRef, updates);
+    const persons = await fetchPersons();
+    const updatedPerson = persons.find((p) => p.id === personId);
+    if (!updatedPerson) {
+      throw new Error("Person not found after update");
+    }
+    return updatedPerson;
+  } catch (error) {
+    console.error("Error updating person:", error);
+    throw new Error("Failed to update person");
+  }
+};
+
+export const deletePerson = async (personId) => {
+  try {
+    const personRef = doc(db, "persons", personId.toString());
+    await deleteDoc(personRef);
+  } catch (error) {
+    console.error("Error deleting person:", error);
+    throw new Error("Failed to delete person");
+  }
+};
+
+export const updatePersonBalance = async (personId, amount) => {
+  try {
+    const personRef = doc(db, "persons", personId.toString());
+    await updateDoc(personRef, {
+      balance: increment(amount),
+    });
+    const persons = await fetchPersons();
+    const updatedPerson = persons.find((p) => p.id === personId);
+    if (!updatedPerson) {
+      throw new Error("Person not found after update");
+    }
+    return updatedPerson;
+  } catch (error) {
+    console.error("Error updating person balance:", error);
+    throw new Error("Failed to update person balance");
+  }
+};
+
 // Sales APIs
 export const fetchSalesHistory = async () => {
   try {
@@ -126,6 +203,8 @@ export const fetchSalesHistory = async () => {
         subtotal: data.subtotal,
         tax: data.tax,
         total: data.total,
+        personId: data.personId,
+        paymentMethod: data.paymentMethod || "cash",
       });
     });
     return sales;
@@ -149,6 +228,8 @@ export const createSale = async (saleData) => {
       subtotal: saleData.subtotal,
       tax: saleData.tax,
       total: saleData.total,
+      personId: saleData.personId,
+      paymentMethod: saleData.paymentMethod,
     };
   } catch (error) {
     console.error("Error creating sale:", error);
@@ -163,6 +244,11 @@ export const apiService = {
   deleteProduct,
   updateProductStock,
   restockProduct,
+  fetchPersons,
+  createPerson,
+  updatePerson,
+  deletePerson,
+  updatePersonBalance,
   fetchSalesHistory,
   createSale,
 };

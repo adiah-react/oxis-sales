@@ -1,5 +1,7 @@
 import {
   AlertTriangleIcon,
+  CreditCardIcon,
+  DollarSignIcon,
   LayoutDashboardIcon,
   MinusIcon,
   PackageIcon,
@@ -116,6 +118,9 @@ const App = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [products, setProducts] = useState(initialProducts);
+  const [persons, setPersons] = useState([]);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showReceipt, setShowReceipt] = useState(false);
@@ -128,6 +133,7 @@ const App = () => {
   // Fetch products from API on mount
   useEffect(() => {
     loadProducts();
+    loadPersons();
     loadSalesHistory();
   }, []);
 
@@ -156,6 +162,15 @@ const App = () => {
     } catch (err) {
       console.error("Failed to fetch sales history from API:", err);
       // Keep using local sales history
+    }
+  };
+
+  const loadPersons = async () => {
+    try {
+      const data = await apiService.fetchPersons();
+      setPersons(data);
+    } catch (err) {
+      console.error("Failed to fetch persons from API:", err);
     }
   };
 
@@ -226,6 +241,16 @@ const App = () => {
   const tax = subtotal * 0.0;
   const total = subtotal + tax;
   const handleCheckout = async () => {
+    if (paymentMethod === "balance") {
+      if (!selectedPerson) {
+        setError("Please select a person to pay with balance");
+        return;
+      }
+      if (selectedPerson.balance < total) {
+        setError("Insufficient balance");
+        return;
+      }
+    }
     try {
       setLoading(true);
       setError(null);
@@ -235,6 +260,8 @@ const App = () => {
         subtotal,
         tax,
         total,
+        personId: selectedPerson?.id,
+        paymentMethod,
       };
       if (useApi) {
         // Send sale to API
@@ -245,6 +272,10 @@ const App = () => {
           const newStock =
             products.find((p) => p.id === item.id).stock - item.quantity;
           await apiService.updateProductStock(item.id, newStock);
+        }
+        if (paymentMethod === "balance" && selectedPerson) {
+          await apiService.updatePersonBalance(selectedPerson.id, -total);
+          await loadPersons();
         }
         // Refresh products from API
         await loadProducts();
@@ -268,6 +299,8 @@ const App = () => {
           subtotal,
           tax,
           total,
+          personId: selectedPerson?.id,
+          paymentMethod,
         };
         setSalesHistory([sale, ...salesHistory]);
       }
@@ -282,6 +315,8 @@ const App = () => {
   const handleNewTransaction = () => {
     setCart([]);
     setShowReceipt(false);
+    setSelectedPerson(null);
+    setPaymentMethod("cash");
   };
   const handleRestock = async (productId, amount) => {
     try {
@@ -539,6 +574,61 @@ const App = () => {
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">Current Order</h2>
           </div>
+          {/* Person Selection */}
+          <div className="p-6 border-b border-gray-200 bg-gray-50">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Person (Optional)
+            </label>
+            <select
+              value={selectedPerson?.id || ""}
+              onChange={(e) => {
+                const person = persons.find((p) => p.id === e.target.value);
+                setSelectedPerson(person || null);
+                if (person) {
+                  setPaymentMethod("balance");
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Guest / Cash Payment</option>
+              {persons.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name} - ${person.balance.toFixed(2)}
+                </option>
+              ))}
+            </select>
+            {selectedPerson && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-900">
+                    {selectedPerson.name}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-medium ${
+                      selectedPerson.type === "student"
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedPerson.type === "staff"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {selectedPerson.type}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSignIcon className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-blue-700">
+                    Available Balance: ${selectedPerson.balance.toFixed(2)}
+                  </span>
+                </div>
+                {selectedPerson.balance < total && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Insufficient balance for this purchase
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex-1 overflow-y-auto p-6">
             {cart.length === 0 ? (
               <div className="text-center text-gray-500 mt-8">
@@ -594,6 +684,39 @@ const App = () => {
           </div>
           {/* Checkout Section */}
           <div className="p-6 border-t border-gray-200 bg-gray-50">
+            {/* Payment Method Selection */}
+            {selectedPerson && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                      paymentMethod === "cash"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <CreditCardIcon className="w-4 h-4 inline mr-2" />
+                    Cash
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod("balance")}
+                    disabled={selectedPerson.balance < total}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      paymentMethod === "balance"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <DollarSignIcon className="w-4 h-4 inline mr-2" />
+                    Balance
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-gray-700">
                 <span>Subtotal:</span>
