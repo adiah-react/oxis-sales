@@ -217,6 +217,11 @@ export const fetchSalesHistory = async () => {
 export const createSale = async (saleData) => {
   try {
     const salesRef = collection(db, "sales");
+
+    if (!saleData.personId) {
+      saleData.personId = "vX8XyW927t9btOWs2om5";
+    }
+
     const docRef = await addDoc(salesRef, {
       ...saleData,
       date: Timestamp.now(),
