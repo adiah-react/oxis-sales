@@ -342,7 +342,14 @@ const Dashboard = ({
                           Date
                         </th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Customer
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
                           Items
+                        </th>
+
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Payment
                         </th>
                         <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
                           Total
@@ -350,21 +357,52 @@ const Dashboard = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {salesHistory.slice(0, 10).map((sale) => (
-                        <tr key={sale.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {new Date(sale.date).toLocaleString()}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {sale.items
-                              .map((item) => `${item.name} (${item.quantity})`)
-                              .join(", ")}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                            ${sale.total.toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
+                      {salesHistory.slice(0, 10).map((sale) => {
+                        const person = sale.personId
+                          ? products.length > 0
+                            ? null
+                            : null
+                          : null;
+                        return (
+                          <tr key={sale.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {new Date(sale.date).toLocaleString()}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {sale.personId ? (
+                                <span className="text-blue-600 font-medium">
+                                  Person ID: {sale.personId}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">Guest</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {sale.items
+                                .map(
+                                  (item) => `${item.name} (${item.quantity})`
+                                )
+                                .join(", ")}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${
+                                  sale.paymentMethod === "balance"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {sale.paymentMethod === "balance"
+                                  ? "Balance"
+                                  : "Cash"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                              ${sale.total.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

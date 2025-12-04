@@ -1,6 +1,7 @@
 import {
   DollarSignIcon,
   EditIcon,
+  EyeIcon,
   FilterIcon,
   PlusIcon,
   SaveIcon,
@@ -10,6 +11,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 const PersonManagement = ({
   persons,
@@ -18,6 +20,7 @@ const PersonManagement = ({
   onUpdatePerson,
   onDeletePerson,
 }) => {
+  const navigate = useNavigate();
   const [editingPerson, setEditingPerson] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -341,6 +344,13 @@ const PersonManagement = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button
+                    onClick={() => navigate(`/admin/persons/${person.id}`)}
+                    className="text-purple-600 hover:text-purple-800 mr-4"
+                    title="View Profile"
+                  >
+                    <EyeIcon className="w-5 h-5" />
+                  </button>
                   <button
                     onClick={() => startEdit(person)}
                     className="text-blue-600 hover:text-blue-800 mr-4"
