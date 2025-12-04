@@ -345,7 +345,7 @@ const PersonManagement = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
-                    onClick={() => navigate(`/admin/persons/${person.id}`)}
+                    onClick={() => navigate(`/admin/person/${person.id}`)}
                     className="text-purple-600 hover:text-purple-800 mr-4"
                     title="View Profile"
                   >
