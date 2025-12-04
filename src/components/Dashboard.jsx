@@ -7,14 +7,16 @@ import {
   TrendingUpIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import SalesAnalytics from "./SalesAnalytics";
 
 const Dashboard = ({
   products,
+  persons,
   salesHistory,
   onRestock,
   onBackToRegister,
-  loading = false,
+  // loading = false,
   error = null,
 }) => {
   const [restockAmount, setRestockAmount] = useState({});
@@ -360,7 +362,7 @@ const Dashboard = ({
                       {salesHistory.slice(0, 10).map((sale) => {
                         const person = sale.personId
                           ? products.length > 0
-                            ? null
+                            ? persons.filter((p) => p.id === sale.personId)[0]
                             : null
                           : null;
                         return (
@@ -371,7 +373,10 @@ const Dashboard = ({
                             <td className="px-4 py-3 text-sm">
                               {sale.personId ? (
                                 <span className="text-blue-600 font-medium">
-                                  Person ID: {sale.personId}
+                                  {/* Person ID: {sale.personId} */}
+                                  <Link to={`/admin/person/${person.id}`}>
+                                    {person.name}
+                                  </Link>
                                 </span>
                               ) : (
                                 <span className="text-gray-500">Guest</span>

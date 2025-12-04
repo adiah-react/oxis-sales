@@ -355,6 +355,7 @@ const App = () => {
     return (
       <Dashboard
         products={products}
+        persons={persons}
         salesHistory={salesHistory}
         onRestock={handleRestock}
         onBackToRegister={() => setView("register")}

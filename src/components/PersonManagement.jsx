@@ -11,7 +11,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 const PersonManagement = ({
   persons,
@@ -319,7 +319,9 @@ const PersonManagement = ({
                   <div className="flex items-center">
                     <UserIcon className="w-5 h-5 text-gray-400 mr-3" />
                     <span className="font-medium text-gray-900">
-                      {person.name}
+                      <Link to={`/admin/person/${person.id}`}>
+                        {person.name}
+                      </Link>
                     </span>
                   </div>
                 </td>
