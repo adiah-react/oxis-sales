@@ -820,7 +820,11 @@ const App = () => {
                 </label>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPaymentMethod("cash")}
+                    onClick={() => {
+                      setPaymentMethod("cash");
+                      setShowCashInput(true);
+                      setCashReceived("");
+                    }}
                     className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                       paymentMethod === "cash"
                         ? "bg-blue-600 text-white"
@@ -831,7 +835,11 @@ const App = () => {
                     Cash
                   </button>
                   <button
-                    onClick={() => setPaymentMethod("balance")}
+                    onClick={() => {
+                      setPaymentMethod("balance");
+                      setShowCashInput(false);
+                      setCashReceived("");
+                    }}
                     disabled={selectedPerson.balance < total}
                     className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       paymentMethod === "balance"
@@ -859,13 +867,67 @@ const App = () => {
                 <span>${total.toFixed(2)}</span>
               </div>
             </div>
+
+            {/* Cash Input */}
+            {showCashInput && paymentMethod === "cash" && (
+              <div className="mb-4 p-4 bg-white rounded-lg border border-gray-300">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cash Received
+                </label>
+                <div className="relative mb-3">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
+                    autoFocus
+                  />
+                </div>
+                {cashReceived && parseFloat(cashReceived) >= total && (
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-700">
+                        ${change.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {cashReceived && parseFloat(cashReceived) < total && (
+                  <p className="text-sm text-red-600">
+                    Amount must be at least ${total.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            )}
+
             <button
               onClick={handleCheckout}
               disabled={cart.length === 0 || loading}
               className="w-full py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? "Processing..." : "Complete Sale"}
+              {loading
+                ? "Processing..."
+                : showCashInput && paymentMethod === "cash"
+                ? "Complete Sale"
+                : "Continue to Payment"}
             </button>
+
+            {showCashInput && (
+              <button
+                onClick={() => {
+                  setShowCashInput(false);
+                  setCashReceived("");
+                }}
+                className="w-full mt-2 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       </div>
