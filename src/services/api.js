@@ -242,6 +242,36 @@ export const createSale = async (saleData) => {
   }
 };
 
+export const deleteSale = async (saleId) => {
+  try {
+    const saleRef = doc(db, "sales", saleId.toString());
+    await deleteDoc(saleRef);
+  } catch (error) {
+    console.error("Error deleting sale:", error);
+    throw new Error("Failed to delete sale");
+  }
+};
+
+export const updateSale = async (saleId, updates) => {
+  try {
+    const saleRef = doc(db, "sales", saleId.toString());
+    await updateDoc(saleRef, {
+      ...updates,
+      date: updates.date ? Timestamp.fromDate(updates.date) : undefined,
+    });
+
+    const sales = await fetchSalesHistory();
+    const updatedSale = sales.find((s) => s.id === saleId);
+    if (!updatedSale) {
+      throw new Error("Sale not found after update");
+    }
+    return updatedSale;
+  } catch (error) {
+    console.error("Error updating sale:", error);
+    throw new Error("Failed to update sale");
+  }
+};
+
 export const apiService = {
   fetchProducts,
   createProduct,
@@ -256,6 +286,8 @@ export const apiService = {
   updatePersonBalance,
   fetchSalesHistory,
   createSale,
+  deleteSale,
+  updateSale,
 };
 
 export default apiService;

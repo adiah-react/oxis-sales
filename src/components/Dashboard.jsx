@@ -1,13 +1,19 @@
 import {
   AlertTriangleIcon,
   DollarSignIcon,
+  EditIcon,
+  MinusIcon,
   PackageIcon,
   PlusIcon,
+  SaveIcon,
   ShoppingBagIcon,
+  TrashIcon,
   TrendingUpIcon,
+  XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router";
+import apiService from "../services/api";
 import SalesAnalytics from "./SalesAnalytics";
 
 const Dashboard = ({
@@ -17,10 +23,20 @@ const Dashboard = ({
   onRestock,
   onBackToRegister,
   // loading = false,
-  error = null,
+  // error = null,
 }) => {
   const [restockAmount, setRestockAmount] = useState({});
   const [activeView, setActiveView] = useState("overview");
+  const [editingSale, setEditingSale] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const totalRevenue = salesHistory.reduce((sum, sale) => sum + sale.total, 0);
   const totalItemsSold = salesHistory.reduce(
     (sum, sale) =>
@@ -59,6 +75,111 @@ const Dashboard = ({
     })
     .sort((a, b) => b.soldQuantity - a.soldQuantity)
     .slice(0, 5);
+
+  const handleDeleteSale = async (saleId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this sale? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await apiService.deleteSale(saleId);
+      // Reload sales history
+      window.location.reload();
+    } catch (err) {
+      setError("Failed to delete sale");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditSale = (sale) => {
+    setEditingSale(sale);
+    setEditFormData({
+      items: [...sale.items],
+      subtotal: sale.subtotal,
+      tax: sale.tax,
+      total: sale.total,
+    });
+  };
+
+  const cancelEditSale = () => {
+    setEditingSale(null);
+    setEditFormData({
+      items: [],
+      subtotal: 0,
+      tax: 0,
+      total: 0,
+    });
+  };
+
+  const updateSaleItem = (itemId, quantity) => {
+    const updatedItems = editFormData.items.map((item) =>
+      item.id === itemId
+        ? {
+            ...item,
+            quantity: Math.max(1, quantity),
+          }
+        : item
+    );
+    const subtotal = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const tax = subtotal * 0;
+    const total = subtotal + tax;
+    setEditFormData({
+      items: updatedItems,
+      subtotal,
+      tax,
+      total,
+    });
+  };
+
+  const removeSaleItem = (itemId) => {
+    const updatedItems = editFormData.items.filter(
+      (item) => item.id !== itemId
+    );
+    if (updatedItems.length === 0) {
+      alert("Cannot remove all items. Delete the sale instead.");
+      return;
+    }
+    const subtotal = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const tax = subtotal * 0;
+    const total = subtotal + tax;
+    setEditFormData({
+      items: updatedItems,
+      subtotal,
+      tax,
+      total,
+    });
+  };
+
+  const handleUpdateSale = async () => {
+    if (!editingSale) return;
+    try {
+      setLoading(true);
+      await apiService.updateSale(editingSale.id, editFormData);
+      cancelEditSale();
+      // Reload sales history
+      window.location.reload();
+    } catch (err) {
+      setError("Failed to update sale");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-gray-100">
       {/* Header */}
@@ -356,56 +477,195 @@ const Dashboard = ({
                         <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
                           Total
                         </th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {salesHistory.slice(0, 10).map((sale) => {
                         const person = sale.personId
                           ? products.length > 0
-                            ? persons.filter((p) => p.id === sale.personId)[0]
+                            ? persons.find((p) => p.id === sale.personId)
                             : null
                           : null;
+
                         return (
-                          <tr key={sale.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900">
-                              {new Date(sale.date).toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {sale.personId ? (
-                                <span className="text-blue-600 font-medium">
-                                  {/* Person ID: {sale.personId} */}
-                                  <Link to={`/admin/person/${person.id}`}>
-                                    {person.name}
-                                  </Link>
+                          <Fragment key={sale.id}>
+                            <tr className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                {new Date(sale.date).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                {sale.personId ? (
+                                  <span className="text-blue-600 font-medium">
+                                    <Link to={`/admin/person/${person.id}`}>
+                                      {person.name}
+                                    </Link>
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500">Guest</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {sale.items
+                                  .map(
+                                    (item) => `${item.name} (x${item.quantity})`
+                                  )
+                                  .join(", ")}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-medium ${
+                                    sale.paymentMethod === "balance"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-gray-100 text-gray-700"
+                                  }`}
+                                >
+                                  {sale.paymentMethod === "balance"
+                                    ? "Balance"
+                                    : "Cash"}
                                 </span>
-                              ) : (
-                                <span className="text-gray-500">Guest</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              {sale.items
-                                .map(
-                                  (item) => `${item.name} (${item.quantity})`
-                                )
-                                .join(", ")}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  sale.paymentMethod === "balance"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {sale.paymentMethod === "balance"
-                                  ? "Balance"
-                                  : "Cash"}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                              ${sale.total.toFixed(2)}
-                            </td>
-                          </tr>
+                              </td>
+                              <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                                ${sale.total.toFixed(2)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right">
+                                <button
+                                  // onClick={() => startEditSale(sale)}
+                                  className="text-blue-600 hover:text-blue-800 mr-3"
+                                  title="Edit Sale"
+                                >
+                                  <EditIcon className="w-4 h-4 inline" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSale(sale.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Delete Sale"
+                                >
+                                  <TrashIcon className="w-4 h-4 inline" />
+                                </button>
+                              </td>
+                            </tr>
+                            {editingSale?.id === sale.id && (
+                              <tr>
+                                <td
+                                  colSpan={6}
+                                  className="px-4 py-4 bg-gray-50"
+                                >
+                                  <div className="bg-white rounded-lg border border-gray-300 p-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h3 className="text-lg font-bold text-gray-900">
+                                        Edit Sale
+                                      </h3>
+                                      <button className="text-gray-600 hover:text-gray-800">
+                                        <XIcon className="w-5 h-5" />
+                                      </button>
+                                    </div>
+
+                                    <div className="space-y-3 mb-4">
+                                      {editFormData.items.map((item) => (
+                                        <div
+                                          key={item.id}
+                                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                        >
+                                          <div className="flex-1">
+                                            <p className="font-medium text-gray-900">
+                                              {item.name}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                              ${item.price.toFixed(2)} each
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                onClick={() =>
+                                                  updateSaleItem(
+                                                    item.id,
+                                                    item.quantity - 1
+                                                  )
+                                                }
+                                                className="w-7 h-7 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                                              >
+                                                <MinusIcon className="w-4 h-4" />
+                                              </button>
+                                              <span className="w-10 text-center font-semibold">
+                                                {item.quantity}
+                                              </span>
+                                              <button
+                                                onClick={() =>
+                                                  updateSaleItem(
+                                                    item.id,
+                                                    item.quantity + 1
+                                                  )
+                                                }
+                                                className="w-7 h-7 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                                              >
+                                                <PlusIcon className="w-4 h-4" />
+                                              </button>
+                                            </div>
+                                            <span className="font-bold text-gray-900 w-20 text-right">
+                                              $
+                                              {(
+                                                item.price * item.quantity
+                                              ).toFixed(2)}
+                                            </span>
+                                            <button
+                                              onClick={() =>
+                                                removeSaleItem(item.id)
+                                              }
+                                              className="text-red-600 hover:text-red-800"
+                                            >
+                                              <TrashIcon className="w-4 h-4" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <div className="border-t border-gray-200 pt-3 mb-4">
+                                      <div className="flex justify-between text-sm text-gray-700 mb-1">
+                                        <span>Subtotal:</span>
+                                        <span className="font-semibold">
+                                          ${editFormData.subtotal.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between text-sm text-gray-700 mb-1">
+                                        <span>Tax (0%):</span>
+                                        <span className="font-semibold">
+                                          ${editFormData.tax.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                                        <span>Total:</span>
+                                        <span>
+                                          ${editFormData.total.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={handleUpdateSale}
+                                        disabled={loading}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
+                                      >
+                                        <SaveIcon className="w-4 h-4" />
+                                        Save Changes
+                                      </button>
+                                      <button
+                                        onClick={cancelEditSale}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </tbody>
