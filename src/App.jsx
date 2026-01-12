@@ -7,9 +7,12 @@ import {
   PackageIcon,
   PlusIcon,
   RefreshCwIcon,
+  SearchIcon,
   ShieldIcon,
   ShoppingCartIcon,
   TrashIcon,
+  UserIcon,
+  XIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -122,6 +125,10 @@ const App = () => {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [cart, setCart] = useState([]);
+  const [personSearchTerm, setPersonSearchTerm] = useState("");
+  const [showPersonSearch, setShowPersonSearch] = useState(false);
+  const [cashReceived, setCashReceived] = useState("");
+  const [showCashInput, setShowCashInput] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showReceipt, setShowReceipt] = useState(false);
   const [salesHistory, setSalesHistory] = useState([]);
@@ -178,6 +185,12 @@ const App = () => {
     "All",
     ...Array.from(new Set(products.map((p) => p.category))),
   ];
+
+  const filteredPersons = persons.filter(
+    (person) =>
+      person.name.toLowerCase().includes(personSearchTerm.toLowerCase()) ||
+      person.email.toLowerCase().includes(personSearchTerm.toLowerCase())
+  );
 
   const addToCart = (product) => {
     const existingItem = cart.find((item) => item.id === product.id);
@@ -240,6 +253,19 @@ const App = () => {
   );
   const tax = subtotal * 0.0;
   const total = subtotal + tax;
+
+  const handleSelectPerson = () => {
+    setSelectedPerson(null);
+    setPaymentMethod("cash");
+    setPersonSearchTerm("");
+  };
+
+  const handleClearPerson = () => {
+    setSelectedPerson(null);
+    setPaymentMethod("cash");
+    setPersonSearchTerm("");
+  };
+
   const handleCheckout = async () => {
     if (paymentMethod === "balance") {
       if (!selectedPerson) {
@@ -251,6 +277,20 @@ const App = () => {
         return;
       }
     }
+
+    if (paymentMethod === "cash" && !showCashInput) {
+      setShowCashInput(true);
+      return;
+    }
+
+    if (paymentMethod === "cash") {
+      const received = parseFloat(cashReceived);
+      if (isNaN(received) || received < total) {
+        setError("Insufficient cash received");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -317,7 +357,10 @@ const App = () => {
     setShowReceipt(false);
     setSelectedPerson(null);
     setPaymentMethod("cash");
+    setCashReceived("");
+    setShowCashInput(false);
   };
+
   const handleRestock = async (productId, amount) => {
     try {
       setLoading(true);
@@ -344,6 +387,9 @@ const App = () => {
       setLoading(false);
     }
   };
+
+  const change = cashReceived ? parseFloat(cashReceived) - total : 0;
+
   const filteredProducts =
     selectedCategory === "All"
       ? products
@@ -351,6 +397,7 @@ const App = () => {
   const lowStockProducts = products.filter(
     (p) => p.stock <= p.lowStockThreshold
   );
+
   if (view === "dashboard") {
     return (
       <Dashboard
@@ -405,6 +452,18 @@ const App = () => {
               <span>Total:</span>
               <span>${total.toFixed(2)}</span>
             </div>
+            {paymentMethod === "cash" && cashReceived && (
+              <>
+                <div className="flex justify-between text-gray-700 pt-2">
+                  <span>Cash Received:</span>
+                  <span>${parseFloat(cashReceived).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold text-green-600">
+                  <span>Change:</span>
+                  <span>${change.toFixed(2)}</span>
+                </div>
+              </>
+            )}
           </div>
           <button
             onClick={handleNewTransaction}
@@ -575,57 +634,122 @@ const App = () => {
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">Current Order</h2>
           </div>
-          {/* Person Selection */}
+          {/* Person Selection with Search */}
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Person (Optional)
+              Customer
             </label>
-            <select
-              value={selectedPerson?.id || ""}
-              onChange={(e) => {
-                const person = persons.find((p) => p.id === e.target.value);
-                setSelectedPerson(person || null);
-                if (person) {
-                  setPaymentMethod("balance");
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Guest / Cash Payment</option>
-              {persons.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name} - ${person.balance.toFixed(2)}
-                </option>
-              ))}
-            </select>
-            {selectedPerson && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-900">
-                    {selectedPerson.name}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${
-                      selectedPerson.type === "student"
-                        ? "bg-blue-100 text-blue-800"
-                        : selectedPerson.type === "staff"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {selectedPerson.type}
-                  </span>
+            {selectedPerson ? (
+              <div className="relative">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <UserIcon className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-blue-900">
+                        {selectedPerson.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleClearPerson}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        selectedPerson.type === "student"
+                          ? "bg-blue-100 text-blue-800"
+                          : selectedPerson.type === "staff"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {selectedPerson.type}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <DollarSignIcon className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700">
+                        ${selectedPerson.balance.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedPerson.balance < total && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Insufficient balance for this purchase
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <DollarSignIcon className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-blue-700">
-                    Available Balance: ${selectedPerson.balance.toFixed(2)}
+              </div>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowPersonSearch(!showPersonSearch)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-blue-500 transition-colors"
+                >
+                  <span className="text-gray-500">
+                    Search for customer or pay cash
                   </span>
-                </div>
-                {selectedPerson.balance < total && (
-                  <p className="text-xs text-red-600 mt-2">
-                    Insufficient balance for this purchase
-                  </p>
+                  <SearchIcon className="w-5 h-5 text-gray-400" />
+                </button>
+
+                {showPersonSearch && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-hidden flex flex-col">
+                    <div className="p-3 border-b border-gray-200">
+                      <div className="relative">
+                        <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Search by name or email..."
+                          value={personSearchTerm}
+                          onChange={(e) => setPersonSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-transparent"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto flex-1">
+                      {filteredPersons.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          No customers found
+                        </div>
+                      ) : (
+                        filteredPersons.map((person) => (
+                          <button
+                            key={person.id}
+                            onClick={() => handleSelectPerson(person)}
+                            className="w-full px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-gray-900">
+                                {person.name}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  person.type === "student"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : person.type === "staff"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {person.type}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">
+                                {person.email}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                ${person.balance.toFixed(2)}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
