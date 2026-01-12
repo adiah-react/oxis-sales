@@ -142,6 +142,7 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useApi, setUseApi] = useState(true);
+  const [isCheckoutCollapsed, setIsCheckoutCollapsed] = useState(false);
 
   // Fetch products from API on mount
   useEffect(() => {
@@ -890,123 +891,146 @@ const App = () => {
           </div>
 
           {/* Checkout Section */}
-          <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-            {/* Payment Method Selection */}
-            {selectedPerson && (
-              <div className="mb-4">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Payment Method
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setPaymentMethod("cash");
-                      setShowCashInput(true);
-                      setCashReceived("");
-                    }}
-                    className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                      paymentMethod === "cash"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <CreditCardIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
-                    Cash
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPaymentMethod("balance");
-                      setShowCashInput(false);
-                      setCashReceived("");
-                    }}
-                    disabled={selectedPerson.balance < total}
-                    className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed ${
-                      paymentMethod === "balance"
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <DollarSignIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
-                    Balance
-                  </button>
-                </div>
+          <div className="border-t border-gray-200 bg-gray-50">
+            <button
+              onClick={() => setIsCheckoutCollapsed(!isCheckoutCollapsed)}
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <DollarSignIcon className="w-5 h-5 text-gray-600" />
+                <span className="font-bold text-xl sm:text-2xl text-gray-900">
+                  ${total.toFixed(2)}
+                </span>
               </div>
-            )}
+              {isCheckoutCollapsed ? (
+                <ChevronUpIcon className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-gray-700 text-sm sm:text-base">
-                <span>Subtotal:</span>
-                <span className="font-semibold">${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-gray-700 text-sm sm:text-base">
-                <span>Tax (0%):</span>
-                <span className="font-semibold">${tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xl sm:text-2xl font-bold text-gray-900 pt-2 border-t-2 border-gray-300">
-                <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Cash Input */}
-            {showCashInput && paymentMethod === "cash" && (
-              <div className="mb-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-300">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                  Cash Received
-                </label>
-                <div className="relative mb-3">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-base sm:text-lg">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={cashReceived}
-                    onChange={(e) => setCashReceived(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-7 sm:pl-8 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg font-semibold"
-                    autoFocus
-                  />
-                </div>
-                {cashReceived && parseFloat(cashReceived) >= total && (
-                  <div className="p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs sm:text-sm font-medium text-green-700">
-                        ${change.toFixed(2)}
-                      </span>
+            {!isCheckoutCollapsed && (
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                {/* Payment Method Selection */}
+                {selectedPerson && (
+                  <div className="mb-4">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                      Payment Method
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setPaymentMethod("cash");
+                          setShowCashInput(true);
+                          setCashReceived("");
+                        }}
+                        className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                          paymentMethod === "cash"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <CreditCardIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
+                        Cash
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPaymentMethod("balance");
+                          setShowCashInput(false);
+                          setCashReceived("");
+                        }}
+                        disabled={selectedPerson.balance < total}
+                        className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed ${
+                          paymentMethod === "balance"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <DollarSignIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
+                        Balance
+                      </button>
                     </div>
                   </div>
                 )}
-                {cashReceived && parseFloat(cashReceived) < total && (
-                  <p className="text-xs sm:text-sm text-red-600">
-                    Amount must be at least ${total.toFixed(2)}
-                  </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-gray-700 text-sm sm:text-base">
+                    <span>Subtotal:</span>
+                    <span className="font-semibold">
+                      ${subtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gray-700 text-sm sm:text-base">
+                    <span>Tax (0%):</span>
+                    <span className="font-semibold">${tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xl sm:text-2xl font-bold text-gray-900 pt-2 border-t-2 border-gray-300">
+                    <span>Total:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Cash Input */}
+                {showCashInput && paymentMethod === "cash" && (
+                  <div className="mb-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-300">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                      Cash Received
+                    </label>
+                    <div className="relative mb-3">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-base sm:text-lg">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-7 sm:pl-8 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg font-semibold"
+                        autoFocus
+                      />
+                    </div>
+                    {cashReceived && parseFloat(cashReceived) >= total && (
+                      <div className="p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs sm:text-sm font-medium text-green-700">
+                            ${change.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {cashReceived && parseFloat(cashReceived) < total && (
+                      <p className="text-xs sm:text-sm text-red-600">
+                        Amount must be at least ${total.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCheckout}
+                  disabled={cart.length === 0 || loading}
+                  className="w-full py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-base sm:text-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading
+                    ? "Processing..."
+                    : showCashInput && paymentMethod === "cash"
+                    ? "Complete Sale"
+                    : "Continue to Payment"}
+                </button>
+
+                {showCashInput && (
+                  <button
+                    onClick={() => {
+                      setShowCashInput(false);
+                      setCashReceived("");
+                    }}
+                    className="w-full mt-2 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base"
+                  >
+                    Cancel
+                  </button>
                 )}
               </div>
-            )}
-
-            <button
-              onClick={handleCheckout}
-              disabled={cart.length === 0 || loading}
-              className="w-full py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-base sm:text-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading
-                ? "Processing..."
-                : showCashInput && paymentMethod === "cash"
-                ? "Complete Sale"
-                : "Continue to Payment"}
-            </button>
-
-            {showCashInput && (
-              <button
-                onClick={() => {
-                  setShowCashInput(false);
-                  setCashReceived("");
-                }}
-                className="w-full mt-2 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base"
-              >
-                Cancel
-              </button>
             )}
           </div>
         </div>
