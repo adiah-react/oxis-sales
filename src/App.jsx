@@ -1,8 +1,11 @@
 import {
   AlertTriangleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   CreditCardIcon,
   DollarSignIcon,
   LayoutDashboardIcon,
+  LayoutGridIcon,
   MinusIcon,
   PackageIcon,
   PlusIcon,
@@ -129,6 +132,9 @@ const App = () => {
   const [showPersonSearch, setShowPersonSearch] = useState(false);
   const [cashReceived, setCashReceived] = useState("");
   const [showCashInput, setShowCashInput] = useState(false);
+  const [isPersonSectionCollapsed, setIsPersonSectionCollapsed] =
+    useState(false);
+  const [mobileView, setMobileView] = useState("products");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showReceipt, setShowReceipt] = useState(false);
   const [salesHistory, setSalesHistory] = useState([]);
@@ -511,13 +517,51 @@ const App = () => {
           </div>
         </div>
       )}
-      <div className="flex flex-col lg:flex-row h-screen">
+
+      {/* Mobile View Switcher */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-20">
+        <div className="grid grid-cols-2 gap-0">
+          <button
+            onClick={() => setMobileView("products")}
+            className={`flex items-center justify-center gap-2 py-4 font-semibold transition-colors ${
+              mobileView === "products"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            <LayoutGridIcon className="w-5 h-5" />
+            Products
+          </button>
+          <button
+            onClick={() => setMobileView("cart")}
+            className={`flex items-center justify-center gap-2 py-4 font-semibold transition-colors ${
+              mobileView === "cart"
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            <ShoppingCartIcon className="w-5 h-5" />
+            Cart
+            {cart.length > 0 && (
+              <span className="absolute top-2 right-1/4 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row h-screen pb-16 lg:pb-0">
         {/* Products Section */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div
+          className={`flex-1 p-4 sm:p-6 overflow-y-auto ${
+            mobileView === "cart" ? "hidden lg:block" : "block"
+          }`}
+        >
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Cash Register
                 </h1>
                 {useApi && (
@@ -530,26 +574,28 @@ const App = () => {
                 <button
                   onClick={loadProducts}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium disabled:opacity-50"
                 >
                   <RefreshCwIcon
-                    className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+                    className={`w-4 sm:w-5 h-4 sm:h-5 ${
+                      loading ? "animate-spin" : ""
+                    }`}
                   />
-                  Refresh
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
                 <button
                   onClick={() => setView("dashboard")}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >
-                  <LayoutDashboardIcon className="w-5 h-5" />
-                  Dashboard
+                  <LayoutDashboardIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </button>
                 <button
                   onClick={() => navigate("/admin")}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
                 >
-                  <ShieldIcon className="w-5 h-5" />
-                  Admin
+                  <ShieldIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                  <span className="hidden sm:inline">Admin</span>
                 </button>
               </div>
             </div>
@@ -559,7 +605,7 @@ const App = () => {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                     selectedCategory === category
                       ? "bg-blue-600 text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
@@ -579,7 +625,7 @@ const App = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {filteredProducts.map((product) => {
                 const isLowStock = product.stock <= product.lowStockThreshold;
                 const isOutOfStock = product.stock === 0;
@@ -588,32 +634,32 @@ const App = () => {
                     key={product.id}
                     onClick={() => addToCart(product)}
                     disabled={isOutOfStock}
-                    className={`bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-left relative ${
+                    className={`bg-white p-3 sm:p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-left relative ${
                       isOutOfStock ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
                     {isLowStock && !isOutOfStock && (
                       <div className="absolute top-2 right-2">
-                        <AlertTriangleIcon className="w-5 h-5 text-amber-500" />
+                        <AlertTriangleIcon className="w-4 sm:w-5 h-4 sm:h-5 text-amber-500" />
                       </div>
                     )}
-                    <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg mb-3 flex items-center justify-center">
+                    <div className="aspect-square bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg mb-2 sm:mb-3 flex items-center justify-center">
                       <img src={product.image} alt="" />
-                      {/* <ShoppingCartIcon className="w-12 h-12 text-blue-600" /> */}
+                      {/* <ShoppingCartIcon className="w-8 sm:w-12 h-8 sm:h-12 text-blue-600" /> */}
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base truncate">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                       {product.category}
                     </p>
-                    <p className="text-lg font-bold text-blue-600">
+                    <p className="text-base sm:text-lg font-bold text-blue-600">
                       ${product.price.toFixed(2)}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <PackageIcon className="w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-2">
+                      <PackageIcon className="w-3 sm:w-4 h-3 sm:h-4 text-gray-500" />
                       <span
-                        className={`text-sm font-medium ${
+                        className={`text-xs sm:text-sm font-medium ${
                           isOutOfStock
                             ? "text-red-600"
                             : isLowStock
@@ -633,175 +679,207 @@ const App = () => {
           )}
         </div>
         {/* Cart Section */}
-        <div className="lg:w-96 bg-white border-l border-gray-200 flex flex-col">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900">Current Order</h2>
+        <div
+          className={`lg:w-96 bg-white border-l border-gray-200 flex flex-col ${
+            mobileView === "products" ? "hidden lg:flex" : "flex"
+          }`}
+        >
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Current Order
+            </h2>
           </div>
-          {/* Person Selection with Search */}
-          <div className="p-6 border-b border-gray-200 bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Customer
-            </label>
-            {selectedPerson ? (
-              <div className="relative">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <UserIcon className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold text-blue-900">
-                        {selectedPerson.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleClearPerson}
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      <XIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        selectedPerson.type === "student"
-                          ? "bg-blue-100 text-blue-800"
-                          : selectedPerson.type === "staff"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {selectedPerson.type}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <DollarSignIcon className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-semibold text-blue-700">
-                        ${selectedPerson.balance.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                  {selectedPerson.balance < total && (
-                    <p className="text-xs text-red-600 mt-2">
-                      Insufficient balance for this purchase
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="relative">
-                <button
-                  onClick={() => setShowPersonSearch(!showPersonSearch)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-blue-500 transition-colors"
-                >
-                  <span className="text-gray-500">
-                    Search for customer or pay cash
-                  </span>
-                  <SearchIcon className="w-5 h-5 text-gray-400" />
-                </button>
 
-                {showPersonSearch && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-hidden flex flex-col">
-                    <div className="p-3 border-b border-gray-200">
-                      <div className="relative">
-                        <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                        <input
-                          type="text"
-                          placeholder="Search by name or email..."
-                          value={personSearchTerm}
-                          onChange={(e) => setPersonSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-transparent"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div className="overflow-y-auto flex-1">
-                      {filteredPersons.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                          No customers found
+          {/* Collapsible Person Selection with Search */}
+          <div className="border-b border-gray-200 bg-gray-50">
+            <button
+              onClick={() =>
+                setIsPersonSectionCollapsed(!isPersonSectionCollapsed)
+              }
+              className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <UserIcon className="w-5 h-5 text-gray-600" />
+                <span className="font-medium text-gray-900">
+                  {selectedPerson ? selectedPerson.name : "Customer"}
+                </span>
+              </div>
+
+              {isPersonSectionCollapsed ? (
+                <ChevronDownIcon className="w-5 h-5 text-gray-600" />
+              ) : (
+                <ChevronUpIcon className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+
+            {!isPersonSectionCollapsed && (
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                {selectedPerson ? (
+                  <div className="relative">
+                    <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600" />
+                          <span className="font-semibold text-blue-900 text-sm sm:text-base">
+                            {selectedPerson.name}
+                          </span>
                         </div>
-                      ) : (
-                        filteredPersons.map((person) => (
-                          <button
-                            key={person.id}
-                            onClick={() => handleSelectPerson(person)}
-                            className="w-full px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-gray-900">
-                                {person.name}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                  person.type === "student"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : person.type === "staff"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {person.type}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">
-                                {person.email}
-                              </span>
-                              <span className="text-sm font-semibold text-gray-900">
-                                ${person.balance.toFixed(2)}
-                              </span>
-                            </div>
-                          </button>
-                        ))
+                        <button
+                          onClick={handleClearPerson}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          <XIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            selectedPerson.type === "student"
+                              ? "bg-blue-100 text-blue-800"
+                              : selectedPerson.type === "staff"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {selectedPerson.type}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <DollarSignIcon className="w-3 sm:w-4 h-3 sm:h-4 text-blue-600" />
+                          <span className="text-xs sm:text-sm font-semibold text-blue-700">
+                            ${selectedPerson.balance.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedPerson.balance < total && (
+                        <p className="text-xs text-red-600 mt-2">
+                          Insufficient balance
+                        </p>
                       )}
                     </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowPersonSearch(!showPersonSearch)}
+                      className="w-full px-3 sm:px-4 p-2 sm:py-3 bg-white border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-blue-500 transition-colors text-sm sm:text-base"
+                    >
+                      <span className="text-gray-500">Search customer</span>
+                      <SearchIcon className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400" />
+                    </button>
+
+                    {showPersonSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-hidden flex flex-col">
+                        <div className="p-3 border-b border-gray-200">
+                          <div className="relative">
+                            <SearchIcon className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={personSearchTerm}
+                              onChange={(e) =>
+                                setPersonSearchTerm(e.target.value)
+                              }
+                              className="w-full pl-9 sm:pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                              placeholder="Search customers..."
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                          {filteredPersons.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500 text-sm">
+                              No customers found
+                            </div>
+                          ) : (
+                            filteredPersons.map((person) => (
+                              <button
+                                key={person.id}
+                                onClick={() => handleSelectPerson(person)}
+                                className="w-full px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                                    {person.name}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ml-2 ${
+                                      person.type === "student"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : person.type === "staff"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-gray-100 text-gray-800"
+                                    }`}
+                                  >
+                                    {person.type}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs sm:text-sm text-gray-600 truncate">
+                                    {person.email}
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-semibold text-gray-900 flex-shrink-0 ml-2">
+                                    ${person.balance.toFixed(2)}
+                                  </span>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
+
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {cart.length === 0 ? (
               <div className="text-center text-gray-500 mt-8">
-                <ShoppingCartIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>No items in cart</p>
+                <ShoppingCartIcon className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm sm:text-base">No items in cart</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
+                  <div
+                    key={item.id}
+                    className="bg-gray-50 p-3 sm:p-4 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2 sm:mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                           {item.name}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs sm:text-sm text-gray-600">
                           ${item.price.toFixed(2)} each
                         </p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 flex-shrink-0 ml-2"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <TrashIcon className="w-4 sm:w-5 h-4 sm:h-5" />
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="w-8 h-8 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                          className="w-7 sm:w-8 h-7 sm:h-8 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                         >
-                          <MinusIcon className="w-4 h-4" />
+                          <MinusIcon className="w-3 sm:w-4 h-3 sm:h-2" />
                         </button>
-                        <span className="w-12 text-center font-semibold">
+                        <span className="w-10 sm:w-12 text-center font-semibold text-sm sm:text-base">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="w-8 h-8 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+                          className="w-7 sm:w-8 h-7 sm:h-8 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
                         >
-                          <PlusIcon className="w-4 h-4" />
+                          <PlusIcon className="w-3 sm:w-4 h-3 sm:h-4" />
                         </button>
                       </div>
-                      <span className="font-bold text-lg">
+                      <span className="font-bold text-base sm:text-lg">
                         ${(item.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
@@ -810,12 +888,13 @@ const App = () => {
               </div>
             )}
           </div>
+
           {/* Checkout Section */}
-          <div className="p-6 border-t border-gray-200 bg-gray-50">
+          <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
             {/* Payment Method Selection */}
             {selectedPerson && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Payment Method
                 </label>
                 <div className="flex gap-2">
@@ -825,13 +904,13 @@ const App = () => {
                       setShowCashInput(true);
                       setCashReceived("");
                     }}
-                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                    className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                       paymentMethod === "cash"
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                     }`}
                   >
-                    <CreditCardIcon className="w-4 h-4 inline mr-2" />
+                    <CreditCardIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
                     Cash
                   </button>
                   <button
@@ -841,28 +920,29 @@ const App = () => {
                       setCashReceived("");
                     }}
                     disabled={selectedPerson.balance < total}
-                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex-1 py-2 px-3 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed ${
                       paymentMethod === "balance"
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                     }`}
                   >
-                    <DollarSignIcon className="w-4 h-4 inline mr-2" />
+                    <DollarSignIcon className="w-3 sm:w-4 h-3 sm:h-4 inline mr-1 sm:mr-2" />
                     Balance
                   </button>
                 </div>
               </div>
             )}
+
             <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-gray-700 text-sm sm:text-base">
                 <span>Subtotal:</span>
                 <span className="font-semibold">${subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-gray-700 text-sm sm:text-base">
                 <span>Tax (0%):</span>
                 <span className="font-semibold">${tax.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-2xl font-bold text-gray-900 pt-2 border-t-2 border-gray-300">
+              <div className="flex justify-between text-xl sm:text-2xl font-bold text-gray-900 pt-2 border-t-2 border-gray-300">
                 <span>Total:</span>
                 <span>${total.toFixed(2)}</span>
               </div>
@@ -870,12 +950,12 @@ const App = () => {
 
             {/* Cash Input */}
             {showCashInput && paymentMethod === "cash" && (
-              <div className="mb-4 p-4 bg-white rounded-lg border border-gray-300">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-300">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Cash Received
                 </label>
                 <div className="relative mb-3">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-base sm:text-lg">
                     $
                   </span>
                   <input
@@ -884,21 +964,21 @@ const App = () => {
                     value={cashReceived}
                     onChange={(e) => setCashReceived(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
+                    className="w-full pl-7 sm:pl-8 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base sm:text-lg font-semibold"
                     autoFocus
                   />
                 </div>
                 {cashReceived && parseFloat(cashReceived) >= total && (
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-green-700">
+                      <span className="text-xs sm:text-sm font-medium text-green-700">
                         ${change.toFixed(2)}
                       </span>
                     </div>
                   </div>
                 )}
                 {cashReceived && parseFloat(cashReceived) < total && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-xs sm:text-sm text-red-600">
                     Amount must be at least ${total.toFixed(2)}
                   </p>
                 )}
@@ -908,7 +988,7 @@ const App = () => {
             <button
               onClick={handleCheckout}
               disabled={cart.length === 0 || loading}
-              className="w-full py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-base sm:text-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {loading
                 ? "Processing..."
@@ -923,7 +1003,7 @@ const App = () => {
                   setShowCashInput(false);
                   setCashReceived("");
                 }}
-                className="w-full mt-2 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="w-full mt-2 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>
