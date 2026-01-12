@@ -254,10 +254,13 @@ const App = () => {
   const tax = subtotal * 0.0;
   const total = subtotal + tax;
 
-  const handleSelectPerson = () => {
-    setSelectedPerson(null);
-    setPaymentMethod("cash");
+  const handleSelectPerson = (person) => {
+    setSelectedPerson(person);
+    setShowPersonSearch(false);
     setPersonSearchTerm("");
+    // setPaymentMethod("cash");
+    // setPersonSearchTerm("");
+    setPaymentMethod("balance");
   };
 
   const handleClearPerson = () => {
