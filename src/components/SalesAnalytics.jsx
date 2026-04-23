@@ -3,6 +3,7 @@ import {
   CalendarIcon,
   LayersIcon,
   PackageIcon,
+  PrinterIcon,
   TrendingUpIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -144,6 +145,140 @@ const SalesAnalytics = ({ sales, products }) => {
     setSelectedDate(newDate);
   };
 
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const dateLabel = formatDateRange();
+    const rangeLabel = timeRange.charAt(0).toUpperCase() + timeRange.slice(1);
+    const itemRows = itemSalesData
+      .map((item, i) => {
+        const category =
+          productCategoryMap.get(item.productId) || "Uncategorized";
+        return `<tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:center;color:#6b7280;font-weight:600;">${i + 1}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;font-weight:500;">${item.productName}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;color:#6b7280;">${category}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">$${item.revenue.toFixed(2)}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;color:#6b7280;">$${(item.revenue / item.quantity).toFixed(2)}</td>
+      </tr>
+      `;
+      })
+      .join("");
+    const categoryRows = categorySalesData
+      .map((cat) => {
+        const pct =
+          totalRevenue > 0
+            ? ((cat.revenue / totalRevenue) * 100).toFixed(1)
+            : "0";
+        const subRows = cat.items
+          .sort((a, b) => b.revenue - a.revenue)
+          .map(
+            (item) => `<tr style="background:#f9fafb;">
+              <td style="padding:6px 16px 6px 40px;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:13px;">↳</td>
+              <td style="padding:6px 16px;border-bottom:1px solid #f3f4f6;font-size:13px;">${item.productName}</td>
+              <td style="padding:6px 16px;border-bottom:1px solid #f3f4f6;text-align:right;font-size:13px;">${item.quantity}</td>
+              <td style="padding:6px 16px;border-bottom:1px solid #f3f4f6;text-align:right;font-size:13px;font-weight:500;">$${item.revenue.toFixed(2)}</td>
+              <td style="padding:6px 16px;border-bottom:1px solid #f3f4f6;text-align:right;font-size:13px;color:#6b7280;"></td>
+            </tr>`,
+          )
+          .join("");
+        return `<tr style="background:#fff;">
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;font-weight:700;">${cat.category}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;color:#6b7280;">${cat.itemCount} product${cat.itemCount !== 1 ? "s" : ""}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;">${cat.quantity}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;">$${cat.revenue.toFixed(2)}</td>
+          <td style="padding:10px 16px;border-bottom:1px solid #e5e7eb;text-align:right;color:#6b7280;">${pct}%</td>
+        </tr>${subRows}`;
+      })
+      .join("");
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Sales Report — ${dateLabel}</title>
+  <style>
+    {* { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827; padding: 40px; max-width: 900px; margin: 0 auto; }
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none !important; }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; }
+    }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #6b7280; font-size: 15px; margin-bottom: 32px; }
+    .summary { display: flex; gap: 24px; margin-bottom: 36px; }
+    .summary-card { flex: 1; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px; }
+    .summary-card .label { font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .summary-card .value { font-size: 28px; font-weight: 700; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #111827; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 36px; font-size: 14px; }
+    th { padding: 10px 16px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; border-bottom: 2px solid #d1d5db; font-weight: 600; }
+    th.right { text-align: right; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; display: flex; justify-content: space-between; }
+    .print-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 32px; }
+    .print-btn:hover { background: #1d4ed8; }}</style>
+</head>
+<body>
+  <button class="print-btn no-print" onclick="window.print()">🖨️ Print Report</button>
+
+  <h1>Sales Report</h1>
+  <p class="subtitle">${rangeLabel} Report — ${dateLabel}</p>
+
+  <div class="summary">
+    <div class="summary-card">
+      <div class="label">Total Revenue</div>
+      <div class="value">$${totalRevenue.toFixed(2)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Items Sold</div>
+      <div class="value">${totalQuantity}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Products</div>
+      <div class="value">${itemSalesData.length}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Sales by Item</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:50px;">#</th>
+        <th>Product</th>
+        <th>Category</th>
+        <th class="right">Qty</th>
+        <th class="right">Revenue</th>
+        <th class="right">Avg Price</th>
+      </tr>
+    </thead>
+    <tbody>${itemRows}</tbody>
+  </table>
+
+  <div class="section-title">Sales by Category</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Products</th>
+        <th class="right">Qty</th>
+        <th class="right">Revenue</th>
+        <th class="right">% of Total</th>
+      </tr>
+    </thead>
+    <tbody>${categoryRows}</tbody>
+  </table>
+
+  <div class="footer">
+    <span>Generated on ${new Date().toLocaleString()}</span>
+    <span>Cash Register System</span>
+  </div>
+</body>
+</html>`;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   const maxItemRevenue = Math.max(
     ...itemSalesData.map((item) => item.revenue),
     1,
@@ -195,6 +330,13 @@ const SalesAnalytics = ({ sales, products }) => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium transition-colors"
+            >
+              <PrinterIcon className="w-4 h-4" />
+              Print Report
+            </button>
             <button
               onClick={() => setTimeRange("daily")}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
