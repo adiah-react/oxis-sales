@@ -41,13 +41,13 @@ const Dashboard = ({
   const totalItemsSold = salesHistory.reduce(
     (sum, sale) =>
       sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-    0
+    0,
   );
 
   const averageOrderValue =
     salesHistory.length > 0 ? totalRevenue / salesHistory.length : 0;
   const lowStockProducts = products.filter(
-    (p) => p.stock <= p.lowStockThreshold
+    (p) => p.stock <= p.lowStockThreshold,
   );
 
   const outOfStockProducts = products.filter((p) => p.stock === 0);
@@ -79,7 +79,7 @@ const Dashboard = ({
   const handleDeleteSale = async (saleId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this sale? This action cannot be undone."
+        "Are you sure you want to delete this sale? This action cannot be undone.",
       )
     ) {
       return;
@@ -125,11 +125,11 @@ const Dashboard = ({
             ...item,
             quantity: Math.max(1, quantity),
           }
-        : item
+        : item,
     );
     const subtotal = updatedItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
-      0
+      0,
     );
     const tax = subtotal * 0;
     const total = subtotal + tax;
@@ -143,7 +143,7 @@ const Dashboard = ({
 
   const removeSaleItem = (itemId) => {
     const updatedItems = editFormData.items.filter(
-      (item) => item.id !== itemId
+      (item) => item.id !== itemId,
     );
     if (updatedItems.length === 0) {
       alert("Cannot remove all items. Delete the sale instead.");
@@ -151,7 +151,7 @@ const Dashboard = ({
     }
     const subtotal = updatedItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
-      0
+      0,
     );
 
     const tax = subtotal * 0;
@@ -232,7 +232,7 @@ const Dashboard = ({
 
       <div className="p-6">
         {activeView === "analytics" ? (
-          <SalesAnalytics sales={salesHistory} product={products} />
+          <SalesAnalytics sales={salesHistory} products={products} />
         ) : (
           <>
             {/* Stats Overview */}
@@ -375,8 +375,8 @@ const Dashboard = ({
                               isOutOfStock
                                 ? "text-red-600"
                                 : isLowStock
-                                ? "text-amber-600"
-                                : "text-green-600"
+                                  ? "text-amber-600"
+                                  : "text-green-600"
                             }`}
                           >
                             <p className="font-bold text-lg">{product.stock}</p>
@@ -510,7 +510,8 @@ const Dashboard = ({
                               <td className="px-4 py-3 text-sm text-gray-600">
                                 {sale.items
                                   .map(
-                                    (item) => `${item.name} (x${item.quantity})`
+                                    (item) =>
+                                      `${item.name} (x${item.quantity})`,
                                   )
                                   .join(", ")}
                               </td>
@@ -583,7 +584,7 @@ const Dashboard = ({
                                                 onClick={() =>
                                                   updateSaleItem(
                                                     item.id,
-                                                    item.quantity - 1
+                                                    item.quantity - 1,
                                                   )
                                                 }
                                                 className="w-7 h-7 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
@@ -597,7 +598,7 @@ const Dashboard = ({
                                                 onClick={() =>
                                                   updateSaleItem(
                                                     item.id,
-                                                    item.quantity + 1
+                                                    item.quantity + 1,
                                                   )
                                                 }
                                                 className="w-7 h-7 bg-white rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"

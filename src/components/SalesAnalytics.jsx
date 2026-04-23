@@ -1,6 +1,7 @@
 import {
   BarChart3Icon,
   CalendarIcon,
+  LayersIcon,
   PackageIcon,
   TrendingUpIcon,
 } from "lucide-react";
@@ -9,6 +10,8 @@ import { useMemo, useState } from "react";
 const SalesAnalytics = ({ sales, products }) => {
   const [timeRange, setTimeRange] = useState("daily");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState("item");
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   const getDateRange = (date, range) => {
     const start = new Date(date);
@@ -34,6 +37,12 @@ const SalesAnalytics = ({ sales, products }) => {
       end,
     };
   };
+
+  const productCategoryMap = useMemo(() => {
+    const map = new Map();
+    products.forEach((p) => map.set(p.id, p.category));
+    return map;
+  }, [products]);
 
   const itemSalesData = useMemo(() => {
     const { start, end } = getDateRange(selectedDate, timeRange);
@@ -61,14 +70,40 @@ const SalesAnalytics = ({ sales, products }) => {
     return Array.from(itemMap.values()).sort((a, b) => b.revenue - a.revenue);
   }, [sales, selectedDate, timeRange]);
 
+  const categorySalesData = useMemo(() => {
+    const categoryMap = new Map();
+    itemSalesData.forEach((item) => {
+      const category =
+        productCategoryMap.get(item.productId) || "Uncategorized";
+      const existing = categoryMap.get(category);
+      if (existing) {
+        existing.quantity += item.quantity;
+        existing.revenue += item.revenue;
+        existing.itemCount += 1;
+        existing.items.push(item);
+      } else {
+        categoryMap.set(category, {
+          category,
+          quantity: item.quantity,
+          revenue: item.revenue,
+          itemCount: 1,
+          items: [item],
+        });
+      }
+    });
+    return Array.from(categoryMap.values()).sort(
+      (a, b) => b.revenue - a.revenue,
+    );
+  }, [itemSalesData, productCategoryMap]);
+
   const totalRevenue = itemSalesData.reduce(
     (sum, item) => sum + item.revenue,
-    0
+    0,
   );
 
   const totalQuantity = itemSalesData.reduce(
     (sum, item) => sum + item.quantity,
-    0
+    0,
   );
 
   const formatDateRange = () => {
@@ -109,7 +144,43 @@ const SalesAnalytics = ({ sales, products }) => {
     setSelectedDate(newDate);
   };
 
-  const maxRevenue = Math.max(...itemSalesData.map((item) => item.revenue), 1);
+  const maxItemRevenue = Math.max(
+    ...itemSalesData.map((item) => item.revenue),
+    1,
+  );
+
+  const maxCategoryRevenue = Math.max(
+    ...categorySalesData.map((c) => c.revenue),
+    1,
+  );
+
+  const categoryColors = {
+    Beverages: {
+      bar: "from-sky-500 to-sky-600",
+      bg: "bg-sky-100",
+      text: "text-sky-800",
+    },
+    Food: {
+      bar: "from-amber-500 to-amber-600",
+      bg: "bg-amber-100",
+      text: "text-amber-800",
+    },
+    Snacks: {
+      bar: "from-rose-500 to-rose-600",
+      bg: "bg-rose-100",
+      text: "text-rose-800",
+    },
+  };
+
+  const getCategoryColor = (category) => {
+    return (
+      categoryColors[category] || {
+        bar: "from-gray-500 to-gray-600",
+        bg: "bg-gray-100",
+        text: "text-gray-800",
+      }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -207,15 +278,36 @@ const SalesAnalytics = ({ sales, products }) => {
             <BarChart3Icon className="w-5 h-5 text-purple-600" />
           </div>
           <p className="text-3xl font-bold text-purple-900">
-            {itemSalesData.length}
+            {viewMode === "item"
+              ? itemSalesData.length
+              : categorySalesData.length}
           </p>
         </div>
       </div>
 
-      {/* Sales by Item */}
+      {/* Sales Breakdown */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900">Sales by Item</h3>
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-gray-900">
+            Sales by {viewMode === "item" ? "Item" : "Category"}
+          </h3>
+
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("item")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all ${viewMode === "item" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            >
+              <PackageIcon className="w-4 h-4" />
+              By Item
+            </button>
+            <button
+              onClick={() => setViewMode("category")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all ${viewMode === "category" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            >
+              <LayersIcon className="w-4 h-4" />
+              By Category
+            </button>
+          </div>
         </div>
 
         {itemSalesData.length === 0 ? (
@@ -225,10 +317,10 @@ const SalesAnalytics = ({ sales, products }) => {
               No sales data for this period
             </p>
           </div>
-        ) : (
+        ) : viewMode === "item" ? (
           <div className="p-6 space-y-4">
             {itemSalesData.map((item, index) => {
-              const percentage = (item.revenue / maxRevenue) * 100;
+              const percentage = (item.revenue / maxItemRevenue) * 100;
               return (
                 <div
                   key={item.productId}
@@ -271,6 +363,129 @@ const SalesAnalytics = ({ sales, products }) => {
                       }}
                     />
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-6 space-y-4">
+            {categorySalesData.map((cat, index) => {
+              const percentage = (cat.revenue / maxCategoryRevenue) * 100;
+              const colors = getCategoryColor(cat.category);
+              const isExpanded = expandedCategory === cat.category;
+              const maxItemInCategory = Math.max(
+                ...cat.items.map((i) => i.revenue),
+                1,
+              );
+              return (
+                <div
+                  key={cat.category}
+                  style={{
+                    animation: `slideIn 0.3s ease-out ${index * 0.05}s both`,
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      setExpandedCategory(isExpanded ? null : cat.category)
+                    }
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div
+                          className={`w-10 h-10 ${colors.bg} rounded-lg flex items-center justify-center`}
+                        >
+                          <LayersIcon className={`w-5 h-5 ${colors.text}`} />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">
+                            {cat.category}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {cat.itemCount} product
+                            {cat.itemCount !== 1 ? "s" : ""} • {cat.quantity}{" "}
+                            units sold
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-3">
+                        <div>
+                          <p className="text-lg font-bold text-gray-900">
+                            ${cat.revenue.toFixed(2)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {totalRevenue > 0
+                              ? ((cat.revenue / totalRevenue) * 100).toFixed(1)
+                              : 0}
+                            % of total
+                          </p>
+                        </div>
+                        <svg
+                          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute top-0 left-0 h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all duration-700 ease-out`}
+                        style={{
+                          width: `${percentage}%`,
+                        }}
+                      />
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-3 ml-13 pl-4 border-l-2 border-gray-200 space-y-3">
+                      {cat.items
+                        .sort((a, b) => b.revenue - a.revenue)
+                        .map((item) => {
+                          const itemPercentage =
+                            (item.revenue / maxItemInCategory) * 100;
+                          return (
+                            <div
+                              key={item.productId}
+                              className="py-2"
+                              style={{
+                                animation: "slideIn 0.2s ease-out both",
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div>
+                                  <span className="font-medium text-gray-800 text-sm">
+                                    {item.productName}
+                                  </span>
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    {item.quantity} units
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-gray-900 text-sm">
+                                  ${item.revenue.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`absolute top-0 left-0 h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all duration-500 ease-out opacity-60`}
+                                  style={{
+                                    width: `${itemPercentage}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               );
             })}
